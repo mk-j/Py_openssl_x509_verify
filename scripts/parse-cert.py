@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from OpenSSL.crypto import (load_certificate, dump_privatekey, dump_certificate, X509, X509Name, PKey, TYPE_DSA, TYPE_RSA, FILETYPE_PEM, FILETYPE_ASN1 )
+from OpenSSL.crypto import (load_certificate, dump_privatekey, dump_certificate, X509, X509Name, PKey)
+from OpenSSL.crypto import (TYPE_DSA, TYPE_RSA, FILETYPE_PEM, FILETYPE_ASN1 )
 from Crypto.Util.asn1 import (DerSequence, DerObject)
 from datetime import datetime
 import textwrap
@@ -49,11 +50,9 @@ def parse_cert(cert_file):
         f.close()
 
         x509 = load_certificate(FILETYPE_PEM, cert_pem)
-        subject_str = format_subject_issuer( x509.get_subject() )
-        issuer_str = format_subject_issuer( x509.get_issuer() )
 
         keytype = x509.get_pubkey().type()
-        keytype_list = {TYPE_RSA:'rsaEncryption', TYPE_DSA:'rsaEncryption', 408:'id-ecPublicKey'}
+        keytype_list = {TYPE_RSA:'rsaEncryption', TYPE_DSA:'dsaEncryption', 408:'id-ecPublicKey'}
         key_type_str = keytype_list[keytype] if keytype in keytype_list else 'other'
 
         pkey_lines=[]
@@ -73,11 +72,11 @@ def parse_cert(cert_file):
         print("        Serial Number:")
         print("            %s" % format_split_int(x509.get_serial_number()))
         print("    Signature Algorithm: %s" % x509.get_signature_algorithm())
-        print("    Issuer: %s" % issuer_str )
+        print("    Issuer: %s" % format_subject_issuer( x509.get_issuer() ) )
         print("    Validity")
         print("        Not Before: %s" % format_asn1_date(x509.get_notBefore()))
         print("        Not After : %s" % format_asn1_date(x509.get_notAfter()))
-        print("    Subject: %s" % subject_str )
+        print("    Subject: %s" % format_subject_issuer( x509.get_subject() ) )
         print("    Subject Public Key Info:")
         print("\n".join(pkey_lines))
         print("        X509v3 extensions:")
@@ -95,6 +94,6 @@ if __name__ == "__main__":
     import sys
     import os
     os.chdir(sys.path[0])
-    #parse_cert("../certs/RSA_DigiCertGlobalRootCA.crt");
-    parse_cert("../certs/ECC_DigiCertGlobalCAG3.crt");
+    parse_cert("../certs/RSA_DigiCertGlobalRootCA.crt");
+    #parse_cert("../certs/ECC_DigiCertGlobalCAG3.crt");
     sys.exit(0)
