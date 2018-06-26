@@ -5,7 +5,7 @@ from asn1reader import *
 
 class ASN1Cert:
     def __init__(self):
-        self.root=False
+        self.root=None
         self.version=1
         self.pem=''
         pass
@@ -92,12 +92,12 @@ class ASN1Cert:
                 if extension.childpath("0") and extension.childpath("1") and extension.childpath("0").tag()==0x06:
                     oid = extension.childpath("0").as_string()
                     oid_name = extension.childpath("0").as_oid_name()
-                    extensions[ oid_name ] = 1
-                    second_child_byte = ord(extension.childpath("1").content()[0])
+                    crit_content = extension.childpath("1").content()
+                    crit_byte = 1 if len(crit_content)>0 and ord(crit_content[0])>0 else 0
                     child_count = len(extension.children())
-                    critical = True if child_count==3 and second_child_byte >0 else False
-                    crit_offset = "1" if child_count==2 else "2"
-                    data_node = extension.childpath(crit_offset)
+                    critical = True if child_count==3 and crit_byte >0 else False
+                    next_offset = "1" if child_count==2 else "2"
+                    data_node = extension.childpath(next_offset)
                     parsed_node = ASN1Parser.parseBytes( data_node.content() )
                     extensions[oid_name] = self.extension( oid, parsed_node, False )
         return extensions
@@ -192,10 +192,10 @@ if __name__ == "__main__":
     #filename = "cert-ec.pem"            
     #filename = "cert-dsa.pem"            
     #filename = "cert-rsa2047.pem"            
-    filename = "cert-ct.pem"            
+    filename = "certs/cert-ct.pem"            
     with open(filename,"r") as f: 
         cert = f.read() 
-    f = ASN1File()
+    f = ASN1Cert()
     f.loadPEM(cert)
     print("Version: %s" % f.getVersion())
     print("SerialNumber: %s" % f.getSerialNumber())

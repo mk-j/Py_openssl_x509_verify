@@ -20,8 +20,8 @@ class ASN1Node:
         return self._cstart
     def clength(self):
         return self._clength
-    def header(self):
-        return self._header
+    def hlength(self):
+        return self._hlength
     def add_child(self,child):
         return self._child_nodes.append(child)
     def has_children(self):
@@ -106,6 +106,9 @@ class ASN1FileReader:
         self.chunkpos=self.chunkpos+1
         self.filepos=self.filepos+1
         return ord(v);
+    def ffwd(self,to):
+        while self.filepos < to:
+            self.nextbyte()
 
 #load PEM into memory all at once
 class ASN1PEMReader:
@@ -130,6 +133,8 @@ class ASN1PEMReader:
         b = self._bytes[self._filepos]
         self._filepos = self._filepos+1
         return ord(b)
+    def ffwd(self,to):
+        self._filepos = to
 
 class ASN1Parser:
     @staticmethod
@@ -158,7 +163,7 @@ class ASN1Parser:
     def parseBytes(content):
         asn1reader = ASN1PEMReader() #key bytes are doubly-encoded as asn1 so we parse AGAIN
         asn1reader.loadDER( content )
-        node = ASN1Parser.parse( asn1reader,99 )
+        node = ASN1Parser.parse( asn1reader, 99 )
         return node
     @staticmethod
     def parse(asn1_file,depth=0):
@@ -192,8 +197,7 @@ class ASN1Parser:
                     next_pos = asn1_file.pos()
                 pass
             pass
-        while asn1_file.pos() < end_pos:
-            asn1_file.nextbyte()
+        asn1_file.ffwd(end_pos)
         return node
 
 class ASN1NodeInfo:
@@ -293,17 +297,19 @@ class ASN1Content:
     def date(d):
         # YYMMDDhhmmZ (test) (YY below 50, 2049... YY>=50 1951)
         # YYYYMMDDhhmmZ (test)
+        prefix = 20 if int(d[0])<5 else 19
         if len(d)==13 and d[0:12].isdigit() and d[12]=='Z':
-            prefix = 20 if int(d[0])<5 else 19
             return "%s%s-%s-%s %s:%s:%s GMT" % (prefix, d[0:2],d[2:4],d[4:6],d[6:8],d[8:10],d[10:12])
         elif len(d)==15 and d[0:14].isdigit() and d[14]=='Z':
             return "%s%s-%s-%s %s:%s:%s GMT" % (d[0:2],d[2:4],d[4:6],d[6:8],d[8:10],d[10:12],d[12:14])
+        elif len(d)==11 and d[0:10].isdigit() and d[10]=='Z':
+            return "%s%s-%s-%s %s:%s GMT" % (prefix, d[0:2],d[2:4],d[4:6],d[6:8],d[8:10])
         return "[invalid date]"
         
 
 if __name__ == "__main__":
 
-    filename = "cert.pem"
+    filename = "certs/cert-date.pem"
     try:
         reader = ASN1PEMReader(filename)
         node = ASN1Parser.parse(reader)
