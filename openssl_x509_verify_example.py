@@ -26,10 +26,19 @@ def check_x509_verify_ecc():
     x = x509tools.openssl_x509_verify(cert_pem, ca_pem)
     print("openssl x509 verify result for an ECC cert is %s" % x)
 
+def check_x509_verify_bad():
+    #ca_pem = file_read('./certs/ECC_DigiCertGlobalRootCA3.crt')
+    #cert_pem = file_read('./certs/RSA_DigiCertSHA2SecureServerCA.crt')
+    ca_pem = file_read('./certs/RSA_DigiCertGlobalRootCA.crt')
+    cert_pem = file_read('./certs/ECC_DigiCertGlobalCAG3.crt')
+    x = x509tools.openssl_x509_verify(cert_pem, ca_pem)
+    print("openssl x509 verify result for an RSA/ECC cert is %s" % x)
+
 def main():
     check_openssl_cipher()
     check_x509_verify_rsa()
     check_x509_verify_ecc()
+    check_x509_verify_bad()
 
 if __name__ == "__main__":
     main()

@@ -52,8 +52,11 @@ openssl_x509_verify(PyObject *self, PyObject *args)
     if (issuer && x509)
     {
         EVP_PKEY *signing_key=X509_get_pubkey(issuer);
-        result = signing_key && X509_verify(x509, signing_key);
-        EVP_PKEY_free(signing_key);
+        if (signing_key)
+        {
+            result = X509_verify(x509, signing_key);
+            EVP_PKEY_free(signing_key);
+        }
     }
  
     BIO_free(b);
